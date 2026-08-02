@@ -1,0 +1,419 @@
+# Highly Available Web Application on AWS
+
+## Project Overview
+
+This project demonstrates how to deploy a highly available web application on AWS using core AWS services. The solution is designed to ensure high availability, automatic scaling, monitoring, alerting, secure access management, and audit logging.
+
+---
+
+## Architecture
+
+```text
+                Users
+                  │
+                  ▼
+      Application Load Balancer
+                  │
+                  ▼
+        Auto Scaling Group (ASG)
+        ┌───────────────┐
+        │   EC2 Server 1 │
+        ├───────────────┤
+        │   EC2 Server 2 │
+        ├───────────────┤
+        │   EC2 Server 3 │
+        └───────────────┘
+                  │
+                  ▼
+            Amazon CloudWatch
+                  │
+                  ▼
+              Amazon SNS
+                  │
+                  ▼
+           Email Notifications
+
+CloudTrail ─────────► Audit Logs (Amazon S3)
+
+IAM ────────────────► Secure Access Control
+```
+
+---
+
+## AWS Services Used
+
+- Amazon EC2
+- Auto Scaling Group
+- Application Load Balancer (ALB)
+- Amazon CloudWatch
+- Amazon SNS
+- AWS IAM
+- AWS CloudTrail
+- Amazon S3
+
+---
+
+## Business Requirement
+
+A company hosts a web application and requires:
+
+- High Availability
+- Automatic scaling during traffic spikes
+- Monitoring and alerting
+- Audit logging of AWS activities
+- Secure access management
+
+---
+
+## Project Objectives
+
+- Deploy a web application on Amazon EC2.
+- Distribute traffic using an Application Load Balancer.
+- Automatically scale EC2 instances based on CPU utilization.
+- Monitor infrastructure using Amazon CloudWatch.
+- Receive email alerts through Amazon SNS.
+- Secure AWS resources using IAM Roles.
+- Track AWS API activities using AWS CloudTrail.
+
+---
+
+## Prerequisites
+
+- AWS Account
+- IAM User with Administrator Access
+- Amazon Linux 2023 AMI
+- SSH Key Pair
+- Basic Linux Knowledge
+
+---
+
+# Implementation Steps
+
+## Step 1: Launch EC2 Instance
+
+- Launch an Amazon Linux 2023 EC2 instance.
+- Configure Security Group to allow:
+  - SSH (22)
+  - HTTP (80)
+
+Install Apache Web Server.
+
+```bash
+sudo yum update -y
+sudo yum install httpd -y
+sudo systemctl start httpd
+sudo systemctl enable httpd
+
+echo "<h1>AWS Cloud Engineer Project</h1>" | sudo tee /var/www/html/index.html
+```
+
+---
+
+## Step 2: Create IAM Role
+
+Create an IAM Role for EC2.
+
+Attach the following policy:
+
+- CloudWatchAgentServerPolicy
+
+Attach the IAM Role to the EC2 instance.
+
+---
+
+## Step 3: Create Launch Template
+
+Configure:
+
+- Amazon Linux 2023 AMI
+- t2.micro
+- Security Group
+- IAM Role
+
+User Data:
+
+```bash
+#!/bin/bash
+yum update -y
+yum install httpd -y
+systemctl start httpd
+systemctl enable httpd
+
+echo "<h1>Server Created by Auto Scaling</h1>" > /var/www/html/index.html
+```
+
+---
+
+## Step 4: Create Target Group
+
+Configuration:
+
+- Target Type: Instance
+- Protocol: HTTP
+- Port: 80
+
+Register the EC2 instance.
+
+---
+
+## Step 5: Create Application Load Balancer
+
+Configuration:
+
+- Internet Facing
+- HTTP Listener (Port 80)
+- Attach Target Group
+
+Use the Load Balancer DNS Name to access the application.
+
+---
+
+## Step 6: Create Auto Scaling Group
+
+Configuration:
+
+| Setting | Value |
+|---------|-------|
+| Desired Capacity | 2 |
+| Minimum Capacity | 2 |
+| Maximum Capacity | 5 |
+
+Attach the Launch Template and Target Group.
+
+---
+
+## Step 7: Configure Auto Scaling Policy
+
+Target Tracking Policy
+
+Metric:
+
+- Average CPU Utilization
+
+Target:
+
+- 70%
+
+Scaling Behavior:
+
+- CPU > 70% → Launch one EC2 instance
+- CPU < 20% → Terminate one EC2 instance
+
+---
+
+## Step 8: Configure CloudWatch
+
+Create the following alarms:
+
+- High CPU Utilization
+- Instance Status Check Failed
+
+Monitor:
+
+- CPU Utilization
+- Instance Health
+- Auto Scaling Events
+
+---
+
+## Step 9: Configure Amazon SNS
+
+Create an SNS Topic.
+
+Topic Name:
+
+```
+CloudAlerts
+```
+
+Subscribe your email address.
+
+CloudWatch Alarm → SNS Topic → Email Notification
+
+---
+
+## Step 10: Configure AWS CloudTrail
+
+Create a Trail.
+
+Trail Name:
+
+```
+CloudEngineerTrail
+```
+
+Store logs in an Amazon S3 bucket.
+
+Track:
+
+- EC2 Launch
+- EC2 Termination
+- IAM Changes
+- Security Group Changes
+- Auto Scaling Activities
+
+---
+
+# Testing
+
+## Test 1: Application Load Balancer
+
+Stop one EC2 instance.
+
+Expected Result:
+
+- Load Balancer routes requests only to healthy instances.
+- Application remains available.
+
+---
+
+## Test 2: Auto Scaling
+
+Install Stress.
+
+```bash
+sudo yum install stress -y
+```
+
+Generate CPU Load.
+
+```bash
+stress --cpu 2 --timeout 300
+```
+
+Expected Result:
+
+- CPU utilization exceeds 70%.
+- CloudWatch Alarm is triggered.
+- Auto Scaling launches a new EC2 instance.
+
+---
+
+## Test 3: SNS Notification
+
+Trigger a CloudWatch Alarm.
+
+Expected Result:
+
+- Email notification is received.
+
+---
+
+## Test 4: CloudTrail
+
+Terminate an EC2 instance.
+
+Verify:
+
+- User Name
+- Event Time
+- Source IP
+- AWS API Called
+
+---
+
+# Architecture Workflow
+
+```text
+Users
+   │
+   ▼
+Application Load Balancer
+   │
+   ▼
+Auto Scaling Group
+   │
+   ▼
+EC2 Instances
+   │
+   ▼
+CloudWatch Monitoring
+   │
+   ▼
+SNS Email Notifications
+
+CloudTrail
+   │
+   ▼
+Amazon S3 Audit Logs
+```
+
+---
+
+# Sample Scenarios
+
+## Scenario 1: High Traffic
+
+- CPU utilization exceeds 70%.
+- CloudWatch Alarm is triggered.
+- Auto Scaling launches a new EC2 instance.
+- Load Balancer distributes traffic across healthy instances.
+
+---
+
+## Scenario 2: EC2 Failure
+
+- One EC2 instance becomes unhealthy.
+- Load Balancer removes it from service.
+- Auto Scaling launches a replacement instance.
+- Application remains available.
+
+---
+
+## Scenario 3: IAM Change
+
+- An IAM policy or role is modified.
+- CloudTrail records the event.
+- Security administrators can identify:
+  - Who performed the action
+  - When it occurred
+  - Source IP Address
+  - AWS API Used
+
+---
+
+# CloudWatch vs CloudTrail
+
+| CloudWatch | CloudTrail |
+|------------|------------|
+| Monitoring Service | Auditing Service |
+| Collects Metrics | Records AWS API Calls |
+| Creates Alarms | Tracks User Activities |
+| Monitors Resources | Supports Compliance |
+| Integrates with SNS | Maintains Audit History |
+
+---
+
+# Repository Structure
+
+```text
+aws-highly-available-web-application/
+│
+├── README.md
+├── screenshots/
+│   ├── architecture.png
+│   ├── ec2-instance.png
+│   ├── launch-template.png
+│   ├── target-group.png
+│   ├── load-balancer.png
+│   ├── auto-scaling-group.png
+│   ├── cloudwatch-alarm.png
+│   ├── sns-email.png
+│   └── cloudtrail-events.png
+│
+└── scripts/
+    └── userdata.sh
+```
+
+---
+
+# Future Enhancements
+
+- Configure HTTPS using AWS Certificate Manager (ACM)
+- Register a custom domain using Amazon Route 53
+- Protect the application using AWS WAF
+- Improve performance with Amazon CloudFront
+- Automate deployments using AWS CodePipeline
+- Provision infrastructure using Terraform
+- Create CloudWatch Dashboards
+
