@@ -382,38 +382,5 @@ Amazon S3 Audit Logs
 | Monitors Resources | Supports Compliance |
 | Integrates with SNS | Maintains Audit History |
 
----
 
-# Repository Structure
-
-```text
-aws-highly-available-web-application/
-│
-├── README.md
-├── screenshots/
-│   ├── architecture.png
-│   ├── ec2-instance.png
-│   ├── launch-template.png
-│   ├── target-group.png
-│   ├── load-balancer.png
-│   ├── auto-scaling-group.png
-│   ├── cloudwatch-alarm.png
-│   ├── sns-email.png
-│   └── cloudtrail-events.png
-│
-└── scripts/
-    └── userdata.sh
-```
-
----
-
-# Future Enhancements
-
-- Configure HTTPS using AWS Certificate Manager (ACM)
-- Register a custom domain using Amazon Route 53
-- Protect the application using AWS WAF
-- Improve performance with Amazon CloudFront
-- Automate deployments using AWS CodePipeline
-- Provision infrastructure using Terraform
-- Create CloudWatch Dashboards
 
